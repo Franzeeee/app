@@ -52,12 +52,14 @@ Route::post('/music/search', [MusicController::class, 'search']);
 
 Route::post('/fetchMusic', [MusicController::class, 'fetchMusic']);
 Route::post('/music/delete', [MusicController::class, 'delete']);
+Route::get('/audio/{audio}', [MusicController::class, 'fetchAudio']);
 
 // Album Controllers
 Route::get('/album/all', [AlbumController::class, 'index']);
 Route::post('/album/delete', [AlbumController::class, 'delete']);
 Route::post('/album/update', [AlbumController::class, 'update']);
 Route::get('/albums/{albumId}', [MusicController::class, 'getAlbumWithMusic']);
+Route::get('/album/all/{id}', [AlbumController::class, 'totalAlbum']);
 
 Route::get('/user_management/all', [UserManagementController::class, 'fetchUsers']);
 Route::get('/user/artist', [UserManagementController::class, 'fetchArtist']);

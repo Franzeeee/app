@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Genre;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Listen;
+use Illuminate\Support\Facades\Http;
 
 class MusicController extends Controller
 {
@@ -124,14 +125,29 @@ class MusicController extends Controller
         return response()->json($music, 200);
     }
 
-    public function getAlbumWithMusic($albumId)
+    public function getAlbumWithMusic(Request $request, $albumId)
     {
-        // Retrieve the album with its related music by its ID, limiting the related music to 10
-        $album = Album::with(['music' => function ($query) {
-            $query->take(10); // Limit the number of related music tracks to 10
+        // Retrieve the album with its related music by its ID, paginating the related music
+        $page = $request->input('page', 1); // Get the 'page' query parameter from the request, default to 1
+        $perPage = $request->input('per_page', 10); // Get the 'per_page' query parameter from the request, default to 10
+
+        $album = Album::with(['music' => function ($query) use ($perPage) {
+            $query->paginate($perPage);
         }])->findOrFail($albumId);
 
-        return response()->json($album);
+        // Get the paginator instance from the music relationship
+        $paginator = $album->music()->paginate($perPage);
+
+        // Append pagination information to the album data
+        $albumData = $album->toArray();
+        $albumData['pagination'] = [
+            'total' => $paginator->total(),
+            'per_page' => $paginator->perPage(),
+            'current_page' => $paginator->currentPage(),
+            'last_page' => $paginator->lastPage(),
+        ];
+
+        return response()->json($albumData);
     }
 
 
@@ -156,6 +172,7 @@ class MusicController extends Controller
             $song->artist = $artist ? $artist->name : "Unknown"; // Assign artist's name or "Unknown" if not found
             // Add the album cover URL to the music record
             $song->album_cover = $albumCover;
+            $song->album_title = $album->title;
         }
 
         // Return the music records along with the album cover URL as JSON response
@@ -245,5 +262,28 @@ class MusicController extends Controller
         } else {
             echo "Artist not found";
         }
+    }
+
+    public function fetchAudio($audio)
+    {
+        // URL of the original audio file
+        $filePath  = 'music/' . $audio;
+
+        // Check if the file exists
+        if (!file_exists($filePath)) {
+            return response()->json(['error' => 'Audio file not found'], 404);
+        }
+
+        // Read the file contents
+        $fileContents = file_get_contents($filePath);
+
+        // Set the response headers
+        $headers = [
+            'Content-Type' => 'audio/mpeg',
+            'Content-Length' => filesize($filePath),
+        ];
+
+        // Return the audio file as a response
+        return response($fileContents, 200)->withHeaders($headers);
     }
 }

@@ -57,4 +57,17 @@ class AlbumController extends Controller
 
         return response()->json(['message' => 'Album and its related records deleted successfully'], 200);
     }
+
+    public function totalAlbum($id)
+    {
+        $albums = Album::where('artist', $id)->withTrashed()->get();
+
+        if (!$albums) {
+            return 0;
+        }
+
+        $totalAlbum = $albums->count();
+
+        return $totalAlbum;
+    }
 }
