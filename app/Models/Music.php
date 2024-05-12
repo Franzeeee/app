@@ -27,13 +27,13 @@ class Music extends Model
 
     public function artist()
     {
-        return $this->belongsTo(User::class, 'artist');
+        return $this->belongsTo(User::class, 'artist_id');
     }
     public function genres()
     {
         return $this->belongsToMany(Genre::class, 'music_genre', 'music_id', 'genre_id');
     }
-    
+
     // Define the many-to-many relationship with Playlist model
     public function playlists()
     {
@@ -43,5 +43,9 @@ class Music extends Model
     public function listen()
     {
         return $this->hasOne(Listen::class);
+    }
+    public function album()
+    {
+        return $this->belongsTo(Album::class);
     }
 }

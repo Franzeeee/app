@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Album;
+use App\Models\Listen;
 
 class AlbumController extends Controller
 {
@@ -69,5 +70,16 @@ class AlbumController extends Controller
         $totalAlbum = $albums->count();
 
         return $totalAlbum;
+    }
+
+    public function fetchArtistAlbum($id)
+    {
+        $albums = Album::select('albums.*', 'listens.points')
+            ->where('albums.artist', $id)
+            ->leftJoin('listens', 'albums.id', '=', 'listens.music_id')
+            ->withTrashed()
+            ->get();
+
+        return $albums;
     }
 }

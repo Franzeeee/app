@@ -24,48 +24,37 @@ class MusicController extends Controller
             'id' => 'required',
             'albumCover' => 'required',
             'albumTitle' => 'required',
-            'tracksInfo' => 'required|array', // Ensure tracksInfo is an array
-            'tracksInfo.*.fileName' => 'required|string', // Ensure each track has a name
-            'tracksInfo.*.genres' => 'required|array', // Ensure each track has a genre
-            'tracksInfo.*.genres.*' => 'string', // Ensure each genre is a string
-            'tracks.*' => 'file|mimes:mp3m,wav', // Validate each track file as mp3
+            'tracksInfo' => 'required|array',
+            'tracksInfo.*.fileName' => 'required|string',
+            'tracksInfo.*.genres' => 'required|array',
+            'tracksInfo.*.genres.*' => 'string',
+            'tracks.*' => 'file|mimes:mp3m,wav',
         ]);
 
         $artistId = $request->id;
 
-        // Get the album cover from the request
+
         $albumCover = $request->file('albumCover');
-
-        // Generate a unique name for the album cover
         $albumCoverFileName = time() . '.' . $albumCover->getClientOriginalExtension();
-
-        // Define the destination directory
         $destinationPath = public_path('storage/album_covers');
-
-        // Move the album cover to the destination directory with the generated filename
         $albumCover->move($destinationPath, $albumCoverFileName);
 
-        // Save the album details to the database
         $album = new Album();
         $album->title = $request->input('albumTitle');
-        $album->description = $request->input('albumDescription', ''); // albumDescription is optional
-        $album->artist = $artistId; // Assuming there's a default artist ID
-        $album->cover_image = url('/storage/album_covers/' . $albumCoverFileName); // Get the public URL of the stored file
-        $album->save(); // Move the track file to the desired directory
-
+        $album->description = $request->input('albumDescription', '');
+        $album->artist = $artistId;
+        $album->cover_image = url('/storage/album_covers/' . $albumCoverFileName);
+        $album->save();
         $albumId = $album->id;
 
 
-        // Get the tracks from the request
         $tracks = $request->file();
 
         $iterator = 0;
 
-        // Save each track to the database
         foreach ($tracks as $key => $trackFile) {
-            // Generate a unique name for the track file
-            $randomString = Str::random(10); // Generate a random string
-            $timestamp = time(); // Get the current timestamp
+            $randomString = Str::random(10);
+            $timestamp = time();
             $trackFileName = "{$timestamp}_{$randomString}.{$trackFile->extension()}";
 
             $info = $request->tracksInfo[$iterator];
@@ -77,11 +66,11 @@ class MusicController extends Controller
 
             // Save the track details to the database
             $music = new Music();
-            $music->title = $fileNameFromInfo; // You can set the title to the filename for simplicity, or extract metadata if available
-            $music->album_id = $album->id; // Assuming you have an album ID
-            $music->file_name = url('/music/' . $trackFileName); // Get the file URL using the Storage facade
+            $music->title = $fileNameFromInfo;
+            $music->album_id = $album->id;
+            $music->file_name = url('/music/' . $trackFileName);
             $music->duration = $info['duration'];
-            $music->artist_id = $artistId; // Assuming there's a default artist ID
+            $music->artist_id = $artistId;
             $music->save();
 
             $listen = Listen::create([
@@ -107,38 +96,31 @@ class MusicController extends Controller
 
     public function getAllMusic()
     {
-        // Retrieve all music records from the database
         $music = Music::all();
 
-        // Loop through each music record and replace the artist ID with the user's name
         foreach ($music as $song) {
             $user = User::find($song->artist);
             if ($user) {
                 $song->artist = $user->name;
             } else {
-                // If user is not found, set artist to null or any default value
-                $song->artist = null; // You can replace null with any default value
+                $song->artist = null;
             }
         }
 
-        // Return the modified music data as JSON response
         return response()->json($music, 200);
     }
 
     public function getAlbumWithMusic(Request $request, $albumId)
     {
-        // Retrieve the album with its related music by its ID, paginating the related music
-        $page = $request->input('page', 1); // Get the 'page' query parameter from the request, default to 1
-        $perPage = $request->input('per_page', 10); // Get the 'per_page' query parameter from the request, default to 10
+        $page = $request->input('page', 1);
+        $perPage = $request->input('per_page', 10);
 
         $album = Album::with(['music' => function ($query) use ($perPage) {
             $query->paginate($perPage);
         }])->findOrFail($albumId);
 
-        // Get the paginator instance from the music relationship
         $paginator = $album->music()->paginate($perPage);
 
-        // Append pagination information to the album data
         $albumData = $album->toArray();
         $albumData['pagination'] = [
             'total' => $paginator->total(),
@@ -166,11 +148,8 @@ class MusicController extends Controller
         $music = Music::where('album_id', $request->album_id)->get();
 
         foreach ($music as $song) {
-            // Retrieve the artist name from the users table based on the artist_id
             $artist = User::find($song->artist_id);
-            // Add the artist name to the music record
-            $song->artist = $artist ? $artist->name : "Unknown"; // Assign artist's name or "Unknown" if not found
-            // Add the album cover URL to the music record
+            $song->artist = $artist ? $artist->name : "Unknown";
             $song->album_cover = $albumCover;
             $song->album_title = $album->title;
         }

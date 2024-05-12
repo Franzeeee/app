@@ -12,6 +12,7 @@ use App\Http\Controllers\AlbumController;
 use App\Http\Controllers\ArtistRequestController;
 use App\Http\Controllers\PlaylistController;
 use App\Http\Controllers\ListenController;
+use App\Http\Controllers\SearchController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,6 +28,11 @@ use App\Http\Controllers\ListenController;
 Route::post('/register', [AuthController::class, 'register'])->name('register');
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 
+// User
+Route::get('/getUser/{id}', [UserController::class, 'fetchUser']);
+Route::put('/user/{userId}/update-name', [UserController::class, 'updateUserName']);
+Route::put('/user/{userId}/update-image', [UserController::class, 'updateProfileImage']);
+
 
 // API Endpoints for email verification
 Route::get('/verify/{id}', [EmailController::class, 'verifyEmail']);
@@ -38,6 +44,10 @@ Route::post('/artist-status', [ArtistRequestController::class, 'showStatus']);
 Route::get('/fetch_requests', [ArtistRequestController::class, 'index']);
 Route::get('/artist_requests/{id}', [ArtistRequestController::class, 'reject']);
 Route::post('/approve_artist_requests', [ArtistRequestController::class, 'approve']);
+
+Route::get('/artist-rankings', [UserController::class, 'index']);
+Route::get('/artist-rankings/{userId}', [UserController::class, 'fetchUserRanking']);
+
 
 //Verify if user is logged in
 Route::post('verifyUser', [AuthController::class, 'verify']);
@@ -60,6 +70,7 @@ Route::post('/album/delete', [AlbumController::class, 'delete']);
 Route::post('/album/update', [AlbumController::class, 'update']);
 Route::get('/albums/{albumId}', [MusicController::class, 'getAlbumWithMusic']);
 Route::get('/album/all/{id}', [AlbumController::class, 'totalAlbum']);
+Route::get('/artist/album/{id}', [AlbumController::class, 'fetchArtistAlbum']);
 
 Route::get('/user_management/all', [UserManagementController::class, 'fetchUsers']);
 Route::get('/user/artist', [UserManagementController::class, 'fetchArtist']);
@@ -78,6 +89,9 @@ Route::post('/playlist/music/delete', [PlaylistController::class, 'deleteTrack']
 // Listen
 Route::post('/listen/record', [ListenController::class, 'record']);
 Route::post('/listen/top-ten', [MusicController::class, 'fetchTopMusic']);
+
+//Search
+Route::get('/search/{search}', [SearchController::class, 'search']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
